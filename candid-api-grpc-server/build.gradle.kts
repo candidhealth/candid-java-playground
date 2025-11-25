@@ -1,7 +1,12 @@
 plugins {
     id("java-library")
     id("maven-publish")
-    id("com.google.cloud.artifactregistry.gradle-plugin")
+}
+
+// Only apply artifactregistry plugin when publishing (requires gcloud to be installed)
+// This prevents CI test failures where gcloud is not available
+if (gradle.startParameter.taskNames.any { it.contains("publish") }) {
+    apply(plugin = "com.google.cloud.artifactregistry.gradle-plugin")
 }
 
 dependencies {

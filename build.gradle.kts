@@ -12,8 +12,5 @@ allprojects {
 
     repositories {
         mavenCentral()
-        maven {
-            url = uri("artifactregistry://us-central1-maven.pkg.dev/candid-central/candid-maven-private")
-        }
     }
 }

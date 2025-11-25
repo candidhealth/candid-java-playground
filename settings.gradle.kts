@@ -19,5 +19,5 @@ plugins {
 }
 
 rootProject.name = "candid-java-playground"
-include("app", "list", "utilities")
+include("app")
 include("candid-api-proto", "candid-api-grpc-server", "candid-api-grpc-client")

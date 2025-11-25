@@ -1,0 +1,4 @@
+<repositories>
+  <repository url="https://repo.maven.apache.org/maven2/"/>
+  <repository url="artifactregistry://us-central1-maven.pkg.dev/candid-central/candid-maven-private/"/>
+</repositories>

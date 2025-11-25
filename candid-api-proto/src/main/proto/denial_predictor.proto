@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package candid.api;
+
+option java_multiple_files = true;
+option java_package = "com.candid.api";
+option java_outer_classname = "DenialPredictorProto";
+
+service DenialPredictor {
+  rpc predictDenial(DenialPredictionPayload) returns (DenialPredictionResponse);
+}
+
+message DenialPredictionPayload {
+  string patient_id = 1;
+  double claim_amount = 2;
+  string procedure_code = 3;
+}
+
+message DenialPredictionResponse {
+  bool will_be_denied = 1;
+  double confidence_score = 2;
+  string reason = 3;
+}

@@ -1,0 +1,79 @@
+# Run ./gradlew writeVersionsLocks to regenerate this file. Blank lines are to minimize merge conflicts.
+
+ch.qos.logback:logback-classic:1.4.14 (1 constraints: 3c05393b)
+
+ch.qos.logback:logback-core:1.4.14 (1 constraints: 3b0d3e2a)
+
+com.google.android:annotations:4.1.1.4 (1 constraints: 6e08d68b)
+
+com.google.api.grpc:proto-google-common-protos:2.48.0 (1 constraints: 0c0af6b3)
+
+com.google.code.findbugs:jsr305:3.0.2 (5 constraints: bb3796e6)
+
+com.google.code.gson:gson:2.11.0 (3 constraints: c62237a9)
+
+com.google.errorprone:error_prone_annotations:2.30.0 (8 constraints: 0d546425)
+
+com.google.guava:failureaccess:1.0.2 (1 constraints: 150ae2b4)
+
+com.google.guava:guava:33.3.1-jre (9 constraints: f4744ab0)
+
+com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava (1 constraints: bd17c918)
+
+com.google.j2objc:j2objc-annotations:3.0.0 (2 constraints: 461ac30a)
+
+com.google.protobuf:protobuf-java:3.25.5 (4 constraints: b133f2e2)
+
+com.google.protobuf:protobuf-java-util:3.25.5 (1 constraints: 000a1fb3)
+
+io.grpc:grpc-api:1.69.0 (7 constraints: f64340ff)
+
+io.grpc:grpc-context:1.69.0 (1 constraints: 46088783)
+
+io.grpc:grpc-core:1.69.0 (3 constraints: c11dcbbf)
+
+io.grpc:grpc-netty-shaded:1.69.0 (1 constraints: 4205583b)
+
+io.grpc:grpc-protobuf:1.69.0 (2 constraints: 420f7091)
+
+io.grpc:grpc-protobuf-lite:1.69.0 (1 constraints: 0e0afbb3)
+
+io.grpc:grpc-services:1.69.0 (1 constraints: 4205583b)
+
+io.grpc:grpc-stub:1.69.0 (2 constraints: 420f7091)
+
+io.grpc:grpc-util:1.69.0 (2 constraints: 671537f9)
+
+io.perfmark:perfmark-api:0.27.0 (2 constraints: 9e137c88)
+
+org.apache.commons:commons-lang3:3.17.0 (1 constraints: fd0da442)
+
+org.apache.commons:commons-text:1.13.0 (1 constraints: 3705323b)
+
+org.checkerframework:checker-qual:3.43.0 (1 constraints: 4c0a4abf)
+
+org.codehaus.mojo:animal-sniffer-annotations:1.24 (2 constraints: d20fedab)
+
+org.slf4j:slf4j-api:2.0.9 (2 constraints: 1612e317)
+
+
+
+[Test dependencies]
+
+org.junit:junit-bom:5.12.1 (7 constraints: c6758f06)
+
+org.junit.jupiter:junit-jupiter:5.12.1 (2 constraints: 7a0ea571)
+
+org.junit.jupiter:junit-jupiter-api:5.12.1 (4 constraints: 33396be3)
+
+org.junit.jupiter:junit-jupiter-engine:5.12.1 (2 constraints: 7517f563)
+
+org.junit.jupiter:junit-jupiter-params:5.12.1 (2 constraints: 7517f563)
+
+org.junit.platform:junit-platform-commons:1.12.1 (3 constraints: 6c2a828f)
+
+org.junit.platform:junit-platform-engine:1.12.1 (3 constraints: 842cee7e)
+
+org.junit.platform:junit-platform-launcher:1.12.1 (1 constraints: 3c09a49e)
+
+org.opentest4j:opentest4j:1.3.0 (2 constraints: cf209249)

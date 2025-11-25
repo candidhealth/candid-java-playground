@@ -1,0 +1,7 @@
+# gRPC and Protobuf - use wildcards to keep all versions aligned
+io.grpc:* = 1.69.0
+com.google.protobuf:* = 3.25.1
+
+# Logging
+org.slf4j:slf4j-api = 2.0.9
+ch.qos.logback:logback-classic = 1.4.14

@@ -3,9 +3,9 @@ plugins {
     id("maven-publish")
 }
 
-// Only apply artifactregistry plugin when publishing (requires gcloud to be installed)
-// This prevents CI test failures where gcloud is not available
-if (gradle.startParameter.taskNames.any { it.contains("publish") }) {
+// Only apply artifactregistry plugin when explicitly enabled (requires gcloud)
+// Enable with: ./gradlew publish -PenablePublishing=true
+if (project.findProperty("enablePublishing") == "true") {
     apply(plugin = "com.google.cloud.artifactregistry.gradle-plugin")
 }
 

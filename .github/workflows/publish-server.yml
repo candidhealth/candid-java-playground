@@ -34,4 +34,4 @@ jobs:
         run: chmod +x gradlew
 
       - name: Publish to Artifact Registry
-        run: ./gradlew :candid-api-grpc-server:publish --no-daemon
+        run: ./gradlew :candid-api-grpc-server:publish -PenablePublishing=true --no-daemon

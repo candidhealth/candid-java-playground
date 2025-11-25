@@ -7,9 +7,9 @@
 
 pluginManagement {
     plugins {
-        id("com.google.protobuf") version "0.9.4"
-        id("com.google.cloud.artifactregistry.gradle-plugin") version "2.2.0"
-        id("com.palantir.git-version") version "3.1.0"
+        id("com.google.protobuf") version "0.9.5"
+        id("com.google.cloud.artifactregistry.gradle-plugin") version "2.2.5"
+        id("com.palantir.git-version") version "4.2.0"
     }
 }
 

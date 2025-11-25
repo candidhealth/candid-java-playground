@@ -41,7 +41,7 @@ jobs:
           virtualenvs-in-project: true
 
       - name: Install grpcio-tools
-        run: pip install grpcio-tools
+        run: pip install grpcio-tools==1.77.0
 
       - name: Generate Python bindings from proto files
         working-directory: candid-api-python-client

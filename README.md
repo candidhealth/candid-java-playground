@@ -261,26 +261,56 @@ The `candid-api-grpc-server-cloud-run` module provides a production-ready deploy
 ./candid-api-grpc-server-cloud-run/build/native/nativeCompile/denial-predictor-server
 ```
 
-### Building Container Images
+### Building and Running Native Image with Docker
 
-The module uses [Jib](https://github.com/GoogleContainerTools/jib) for Docker-less container building:
+The easiest way to build and test the native image locally is using Docker (no GraalVM installation required):
+
+```bash
+# Build Docker image with GraalVM native image (takes 2-3 minutes)
+docker build -f candid-api-grpc-server-cloud-run/Dockerfile \
+  -t denial-predictor-server:local .
+
+# Run the container locally
+docker run -p 8080:8080 --name denial-predictor denial-predictor-server:local
+
+# In another terminal, test the server
+./gradlew :candid-api-grpc-server:test --tests DenialPredictorE2ETest
+
+# View logs (JSON structured logging for Cloud Run compatibility)
+docker logs denial-predictor
+
+# Stop and remove container
+docker stop denial-predictor && docker rm denial-predictor
+```
+
+**What happens during the build:**
+1. **Stage 1** (Build): Uses `ghcr.io/graalvm/native-image-community:21` to compile Java → native binary
+   - Downloads dependencies (~1 minute)
+   - Compiles native image (~1-2 minutes)
+   - Output: Single ~40MB executable
+2. **Stage 2** (Runtime): Copies binary to `debian:12-slim` (314MB final image)
+   - Includes only the native binary + minimal OS libraries
+   - Runs as non-root user (`appuser`)
+   - Startup time: <100ms
+
+**Container details:**
+- **Build image**: `ghcr.io/graalvm/native-image-community:21`
+- **Runtime image**: `debian:12-slim` (includes required shared libraries)
+- **Final size**: ~314MB (native binary: ~40MB, base OS: ~274MB)
+- **User**: `appuser:appuser` (non-privileged)
+- **Port**: 8080 (configurable via `PORT` env var)
+
+### Alternative: Building Container Images with Jib
+
+For production CI/CD pipelines, use [Jib](https://github.com/GoogleContainerTools/jib) for Docker-less container building:
 
 ```bash
 # Build and push to Artifact Registry (requires authentication)
 ./gradlew :candid-api-grpc-server-cloud-run:jib
 
-# Build to local Docker daemon (requires Docker installed)
+# Build to local Docker daemon
 ./gradlew :candid-api-grpc-server-cloud-run:jibDockerBuild
-
-# Build as tar archive
-./gradlew :candid-api-grpc-server-cloud-run:jibBuildTar
 ```
-
-**Container details:**
-- **Base image**: `gcr.io/distroless/base-debian12` (minimal, secure)
-- **Image**: `us-central1-docker.pkg.dev/candid-central/candid-containers/denial-predictor-server`
-- **Tags**: `latest`, `<version>`, `native`
-- **User**: `nonroot:nonroot` (non-privileged)
 
 ### Deploying to Cloud Run
 

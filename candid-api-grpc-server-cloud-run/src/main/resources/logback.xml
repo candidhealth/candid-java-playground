@@ -58,20 +58,11 @@
         </encoder>
     </appender>
 
-    <!-- Use JSON logging in Cloud Run, simple logging locally -->
-    <!-- Detect Cloud Run environment via K_SERVICE environment variable -->
-    <if condition='isDefined("K_SERVICE")'>
-        <then>
-            <root level="INFO">
-                <appender-ref ref="CONSOLE_JSON" />
-            </root>
-        </then>
-        <else>
-            <root level="INFO">
-                <appender-ref ref="CONSOLE_SIMPLE" />
-            </root>
-        </else>
-    </if>
+    <!-- Always use simple console appender for GraalVM compatibility -->
+    <!-- Conditional (if/else) requires Janino which complicates native image -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE_JSON" />
+    </root>
 
     <!-- Adjust log levels for noisy libraries -->
     <logger name="io.grpc.netty" level="WARN" />

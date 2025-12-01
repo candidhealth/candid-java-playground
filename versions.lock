@@ -12,11 +12,11 @@ com.google.code.findbugs:jsr305:3.0.2 (4 constraints: a52d8acb)
 
 com.google.code.gson:gson:2.11.0 (3 constraints: c62237a9)
 
-com.google.errorprone:error_prone_annotations:2.36.0 (8 constraints: 2a54f62b)
+com.google.errorprone:error_prone_annotations:2.36.0 (9 constraints: f55c5de3)
 
 com.google.guava:failureaccess:1.0.3 (1 constraints: 160ae3b4)
 
-com.google.guava:guava:33.4.8-jre (8 constraints: 0b63cc81)
+com.google.guava:guava:33.4.8-jre (9 constraints: eb6ea13d)
 
 com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava (1 constraints: bd17c918)
 
@@ -26,11 +26,13 @@ com.google.protobuf:protobuf-java:4.33.1 (4 constraints: b3336de3)
 
 com.google.protobuf:protobuf-java-util:4.33.1 (1 constraints: 030a22b3)
 
-io.grpc:grpc-api:1.77.0 (7 constraints: ef43bbfc)
+io.grpc:grpc-api:1.77.0 (8 constraints: be4c55e0)
 
 io.grpc:grpc-context:1.77.0 (1 constraints: 45088583)
 
-io.grpc:grpc-core:1.77.0 (3 constraints: be1d70bf)
+io.grpc:grpc-core:1.77.0 (4 constraints: 8d26ed82)
+
+io.grpc:grpc-netty:1.77.0 (1 constraints: 4105563b)
 
 io.grpc:grpc-netty-shaded:1.77.0 (1 constraints: 4105563b)
 
@@ -42,21 +44,71 @@ io.grpc:grpc-services:1.77.0 (1 constraints: 4105563b)
 
 io.grpc:grpc-stub:1.77.0 (2 constraints: 400f4d91)
 
-io.grpc:grpc-util:1.77.0 (2 constraints: 651514f9)
+io.grpc:grpc-util:1.77.0 (3 constraints: 341eadce)
 
-io.perfmark:perfmark-api:0.27.0 (2 constraints: 9e137c88)
+io.netty:netty-buffer:4.1.127.Final (8 constraints: 4d75a413)
 
-org.codehaus.mojo:animal-sniffer-annotations:1.24 (4 constraints: c4221ea3)
+io.netty:netty-codec:4.1.127.Final (5 constraints: 41463995)
+
+io.netty:netty-codec-http:4.1.127.Final (2 constraints: 511dc943)
+
+io.netty:netty-codec-http2:4.1.127.Final (1 constraints: 180b83d5)
+
+io.netty:netty-codec-socks:4.1.127.Final (1 constraints: 410fd07a)
+
+io.netty:netty-common:4.1.127.Final (10 constraints: 1f8ff953)
+
+io.netty:netty-handler:4.1.127.Final (2 constraints: ef1b1be7)
+
+io.netty:netty-handler-proxy:4.1.127.Final (1 constraints: 180b83d5)
+
+io.netty:netty-resolver:4.1.127.Final (2 constraints: b21a6b5e)
+
+io.netty:netty-transport:4.1.127.Final (7 constraints: 6d67f56c)
+
+io.netty:netty-transport-native-unix-common:4.1.127.Final (2 constraints: e9179f9b)
+
+io.perfmark:perfmark-api:0.27.0 (3 constraints: 671ce032)
+
+org.codehaus.mojo:animal-sniffer-annotations:1.24 (5 constraints: 2d2b82a8)
+
+org.graalvm.sdk:nativeimage:24.2.0 (1 constraints: 3a05473b)
+
+org.graalvm.sdk:word:24.2.0 (1 constraints: 640c4106)
 
 org.jspecify:jspecify:1.0.0 (1 constraints: 130ae0b4)
 
-org.slf4j:slf4j-api:2.0.17 (2 constraints: 7612b036)
+org.slf4j:slf4j-api:2.0.17 (5 constraints: 05485f97)
 
 
 
 [Test dependencies]
 
-org.junit:junit-bom:6.0.1 (7 constraints: 68741978)
+com.fasterxml.jackson.core:jackson-annotations:2.10.3 (1 constraints: 1b1063b1)
+
+com.github.docker-java:docker-java-api:3.4.0 (1 constraints: 3b0f6067)
+
+com.github.docker-java:docker-java-transport:3.4.0 (1 constraints: c51513cb)
+
+com.github.docker-java:docker-java-transport-zerodep:3.4.0 (1 constraints: 3b0f6067)
+
+junit:junit:4.13.2 (1 constraints: 6e0fd276)
+
+net.bytebuddy:byte-buddy:1.15.11 (1 constraints: 7f0bc9ea)
+
+net.java.dev.jna:jna:5.13.0 (1 constraints: f71513e1)
+
+org.apache.commons:commons-compress:1.24.0 (1 constraints: 6b0fc576)
+
+org.assertj:assertj-core:3.27.3 (1 constraints: 4105513b)
+
+org.graalvm.buildtools:junit-platform-native:0.10.4 (1 constraints: 3705273b)
+
+org.hamcrest:hamcrest-core:1.3 (1 constraints: cc05fe3f)
+
+org.jetbrains:annotations:17.0.0 (1 constraints: 590d4b31)
+
+org.junit:junit-bom:6.0.1 (10 constraints: 63ac582d)
 
 org.junit.jupiter:junit-jupiter:6.0.1 (2 constraints: 160e7258)
 
@@ -68,8 +120,20 @@ org.junit.jupiter:junit-jupiter-params:6.0.1 (2 constraints: 11176a3b)
 
 org.junit.platform:junit-platform-commons:6.0.1 (3 constraints: e229b529)
 
+org.junit.platform:junit-platform-console:6.0.1 (2 constraints: 501c23f0)
+
 org.junit.platform:junit-platform-engine:6.0.1 (3 constraints: fa2b8b14)
 
-org.junit.platform:junit-platform-launcher:6.0.1 (2 constraints: 440ea062)
+org.junit.platform:junit-platform-launcher:6.0.1 (4 constraints: 543421bf)
+
+org.junit.platform:junit-platform-reporting:6.0.1 (2 constraints: f51aba48)
 
 org.opentest4j:opentest4j:1.3.0 (2 constraints: cf209249)
+
+org.opentest4j.reporting:open-test-reporting-tooling-spi:0.2.4 (1 constraints: ce12e218)
+
+org.rnorth.duct-tape:duct-tape:1.0.8 (1 constraints: 3d0f5267)
+
+org.testcontainers:junit-jupiter:1.20.4 (1 constraints: 3905313b)
+
+org.testcontainers:testcontainers:1.20.4 (2 constraints: 0714e177)

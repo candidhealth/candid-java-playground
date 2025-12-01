@@ -1,0 +1,107 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: denial-predictor
+  labels:
+    cloud.googleapis.com/location: us-central1
+  annotations:
+    run.googleapis.com/ingress: all
+    run.googleapis.com/launch-stage: BETA
+spec:
+  template:
+    metadata:
+      annotations:
+        # Autoscaling configuration
+        autoscaling.knative.dev/minScale: "0"  # Scale to zero when idle (cost optimization)
+        autoscaling.knative.dev/maxScale: "10" # Maximum instances
+        autoscaling.knative.dev/target: "80"   # Target concurrency per instance
+
+        # Cloud Run specific settings
+        run.googleapis.com/execution-environment: gen2  # Use second generation execution environment
+        run.googleapis.com/cpu-throttling: "false"      # Don't throttle CPU when not serving requests
+
+      labels:
+        app: denial-predictor
+        version: v1
+        build-type: graalvm-native
+
+    spec:
+      # Use least privilege service account
+      serviceAccountName: denial-predictor@PROJECT_ID.iam.gserviceaccount.com
+
+      # Container specification
+      containerConcurrency: 100  # Max concurrent requests per instance
+      timeoutSeconds: 300         # Request timeout (5 minutes)
+
+      containers:
+      - name: denial-predictor
+        image: us-central1-docker.pkg.dev/candid-central/candid-containers/denial-predictor-server:latest
+
+        # Port configuration (gRPC over HTTP/2)
+        ports:
+        - name: h2c  # HTTP/2 Cleartext (Cloud Run handles TLS termination)
+          containerPort: 8080
+          protocol: TCP
+
+        # Resource limits (optimized for GraalVM native image)
+        resources:
+          limits:
+            # GraalVM native image uses ~20-30MB vs ~100MB for JVM
+            memory: 128Mi  # Much lower than typical JVM requirements
+            cpu: 1         # 1 vCPU
+
+          requests:
+            memory: 64Mi   # Minimum memory reservation
+            cpu: 0.5       # Minimum CPU
+
+        # Environment variables
+        env:
+        - name: PORT
+          value: "8080"
+        - name: MALLOC_ARENA_MAX
+          value: "2"  # Reduce native memory usage
+
+        # gRPC Health Check (liveness probe)
+        # Cloud Run will restart the container if health checks fail
+        livenessProbe:
+          grpc:
+            # Service name from gRPC health checking protocol
+            service: grpc.health.v1.Health
+          initialDelaySeconds: 10  # Wait 10s after startup before first check
+          periodSeconds: 3         # Check every 3 seconds
+          timeoutSeconds: 3        # Health check timeout
+          failureThreshold: 5      # Restart after 5 consecutive failures
+          successThreshold: 1      # Consider healthy after 1 success
+
+        # Startup probe (for slow-starting containers)
+        # GraalVM should start in <100ms, so this is generous
+        startupProbe:
+          grpc:
+            service: grpc.health.v1.Health
+          initialDelaySeconds: 0
+          periodSeconds: 1
+          timeoutSeconds: 3
+          failureThreshold: 10  # Allow up to 10 seconds for startup
+
+---
+# Example: IAM policy to allow unauthenticated access
+# Remove this section if you want to require authentication
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: denial-predictor-iam-policy
+  annotations:
+    description: "Example IAM policy - configure as needed"
+data:
+  policy.yaml: |
+    # To allow unauthenticated access (public):
+    # gcloud run services add-iam-policy-binding denial-predictor \
+    #   --region=us-central1 \
+    #   --member="allUsers" \
+    #   --role="roles/run.invoker"
+    #
+    # To allow specific service account:
+    # gcloud run services add-iam-policy-binding denial-predictor \
+    #   --region=us-central1 \
+    #   --member="serviceAccount:caller@PROJECT_ID.iam.gserviceaccount.com" \
+    #   --role="roles/run.invoker"

@@ -10,6 +10,8 @@ pluginManagement {
         id("com.google.protobuf") version "0.9.5"
         id("com.google.cloud.artifactregistry.gradle-plugin") version "2.2.5"
         id("com.palantir.git-version") version "4.2.0"
+        id("com.google.cloud.tools.jib") version "3.5.1"
+        id("org.graalvm.buildtools.native") version "0.10.4"
     }
 }
 
@@ -19,4 +21,4 @@ plugins {
 }
 
 rootProject.name = "candid-java-playground"
-include("candid-api-proto", "candid-api-grpc-server", "candid-api-grpc-client")
+include("candid-api-proto", "candid-api-grpc-server", "candid-api-grpc-client", "candid-api-grpc-server-cloud-run")

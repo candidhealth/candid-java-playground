@@ -17,6 +17,13 @@ dependencies {
     implementation("io.grpc:grpc-netty-shaded")
     implementation("io.grpc:grpc-services")
 
+    // Machine Learning
+    implementation("ml.dmlc:xgboost4j_2.12:1.7.6")
+    implementation("ml.dmlc:xgboost4j-spark_2.12:1.7.6")
+
+    // Caching
+    implementation("com.github.ben-manes.caffeine:caffeine:3.1.8")
+
     // Logging
     implementation("org.slf4j:slf4j-api")
     runtimeOnly("ch.qos.logback:logback-classic")

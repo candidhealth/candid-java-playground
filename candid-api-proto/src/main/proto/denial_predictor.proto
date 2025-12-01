@@ -10,14 +10,57 @@ service DenialPredictor {
   rpc predictDenial(DenialPredictionPayload) returns (DenialPredictionResponse);
 }
 
+message ServiceLineDenialPredictionPayload {
+	string service_line_id = 1;
+    bool has_prior_authorization_number = 2;
+    bool has_referral_number = 3;
+    bool has_referring_provider = 4;
+    bool has_supervising_provider = 5;
+    bool has_initial_referring_provider = 6;
+    bool has_ordering_provider = 7;
+    bool is_drug_claim = 8;
+    bool has_service_line_description = 9;
+    double quantity = 10;
+    double charge_per_unit = 11;
+    int32 days_since_epoch = 12;
+    string payer_id = 13;
+    string billing_provider_state = 14;
+    string place_of_service_code = 15;
+    string claim_filing_code = 16;  // code name for payer plan type
+    string service_facility_state = 17;
+    string claim_frequency_code = 18;
+    string procedure_code = 19;
+    string procedure_modifier_1 = 20;
+    string procedure_modifier_2 = 21;
+    string procedure_modifier_3 = 22;
+    string procedure_modifier_4 = 23;
+    string units = 24;
+    string diagnosis_1_code = 25;
+    string diagnosis_2_code = 26;
+    string diagnosis_3_code = 27;
+    string diagnosis_4_code = 28;
+    string diagnosis_5_code = 29;
+    string diagnosis_6_code = 30;
+    string service_line_diagnosis_1_code = 31;
+    string service_line_diagnosis_2_code = 32;
+    string service_line_diagnosis_3_code = 33;
+    string service_line_diagnosis_4_code = 34;
+    string billing_provider_taxonomy_code = 35;
+    string rendering_provider_taxonomy_code = 36;
+    string rendering_provider_license_type = 37;
+}
+
 message DenialPredictionPayload {
-  string patient_id = 1;
-  double claim_amount = 2;
-  string procedure_code = 3;
+	repeated ServiceLineDenialPredictionPayload items = 1;
+}
+
+message ServiceLinePredictionResponse {
+	double raw_score = 1;
+	double probability = 2;
+	string raw_reason = 3;
+	string human_readable_reason = 4;
 }
 
 message DenialPredictionResponse {
-  bool will_be_denied = 1;
-  double confidence_score = 2;
-  string reason = 3;
+  map<string, ServiceLinePredictionResponse> results = 1;
 }

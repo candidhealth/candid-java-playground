@@ -16,9 +16,8 @@ candid-java-playground/
 
 ## Prerequisites
 
-- **Java 21** - Required for building and running
+- **Java 21** or **GraalVM 21** - Required for building and running
 - **Protocol Buffers Compiler (protoc)** - Required for proto file generation
-- **GraalVM 21** (Optional) - Required for building native images for Cloud Run deployment
 
 ### Installing protoc on macOS
 
@@ -33,9 +32,25 @@ protoc --version
 
 For other platforms, see [Protocol Buffers Installation](https://grpc.io/docs/protoc-installation/).
 
-### Installing GraalVM on macOS (Optional)
+### Installing GraalVM (Required for Native Images)
 
-Only needed if you want to build native images locally:
+To build native images for Cloud Run deployment, you need GraalVM with the `native-image` tool installed.
+
+**Option 1: SDKMAN (Recommended)**
+
+```bash
+# Install GraalVM 21 with SDKMAN
+sdk install java 21.0.9-graal
+
+# Verify installation
+java -version
+# Should show: GraalVM Runtime Environment Oracle GraalVM 21.0.9+7.1
+
+native-image --version
+# Should show: native-image 21.0.9
+```
+
+**Option 2: Homebrew**
 
 ```bash
 # Using Homebrew
@@ -45,7 +60,7 @@ brew install --cask graalvm-jdk
 java -version
 # Should show: Java 21.x.x with GraalVM
 
-# Install native-image tool
+# Install native-image tool (may be needed depending on distribution)
 gu install native-image
 ```
 
@@ -251,19 +266,60 @@ The `candid-api-grpc-server-cloud-run` module provides a production-ready deploy
 - Some reflection-based libraries require configuration
 - Best for bursty traffic patterns with frequent cold starts
 
-### Building the Native Image
+### Building the Native Image with Gradle
+
+**Requirements**: GraalVM 21 with `native-image` installed (see Prerequisites above)
 
 ```bash
-# Build native image locally (requires GraalVM installed)
+# Build native image with Gradle (takes 1-2 minutes)
 ./gradlew :candid-api-grpc-server-cloud-run:nativeCompile
 
-# Run the native image
+# Run the native image locally
 ./candid-api-grpc-server-cloud-run/build/native/nativeCompile/denial-predictor-server
 ```
 
-### Building and Running Native Image with Docker
+**What happens during the build:**
+- Gradle detects your installed GraalVM via toolchain or JAVA_HOME
+- Compiles Java bytecode to a native binary (~105MB)
+- Applies GraalVM configuration for Netty, gRPC, and reflection
+- Output: Single executable with <100ms startup time
 
-The easiest way to build and test the native image locally is using Docker (no GraalVM installation required):
+**Gradle configuration highlights:**
+```kotlin
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(21))
+        vendor.set(JvmVendorSpec.GRAAL_VM)  // Requests GraalVM distribution
+    }
+}
+
+graalvmNative {
+    binaries {
+        named("main") {
+            imageName.set("denial-predictor-server")
+            mainClass.set("com.candid.api.cloudrun.CloudRunServer")
+            buildArgs.add("--verbose")
+        }
+    }
+    toolchainDetection.set(true)  // Auto-detect GraalVM from toolchain
+}
+```
+
+### Building Container Images with Jib
+
+For production CI/CD pipelines, use [Jib](https://github.com/GoogleContainerTools/jib) for Docker-less container building:
+
+```bash
+# Build native image and package with Jib (one command)
+./gradlew :candid-api-grpc-server-cloud-run:jibNative
+
+# Or build native image and push to Artifact Registry
+./gradlew :candid-api-grpc-server-cloud-run:nativeCompile :candid-api-grpc-server-cloud-run:jib
+```
+
+### Alternative: Building with Docker
+
+If you don't want to install GraalVM locally, you can use Docker with a multi-stage build:
 
 ```bash
 # Build Docker image with GraalVM native image (takes 2-3 minutes)
@@ -273,44 +329,11 @@ docker build -f candid-api-grpc-server-cloud-run/Dockerfile \
 # Run the container locally
 docker run -p 8080:8080 --name denial-predictor denial-predictor-server:local
 
-# In another terminal, test the server
-./gradlew :candid-api-grpc-server:test --tests DenialPredictorE2ETest
-
-# View logs (JSON structured logging for Cloud Run compatibility)
-docker logs denial-predictor
-
 # Stop and remove container
 docker stop denial-predictor && docker rm denial-predictor
 ```
 
-**What happens during the build:**
-1. **Stage 1** (Build): Uses `ghcr.io/graalvm/native-image-community:21` to compile Java → native binary
-   - Downloads dependencies (~1 minute)
-   - Compiles native image (~1-2 minutes)
-   - Output: Single ~40MB executable
-2. **Stage 2** (Runtime): Copies binary to `debian:12-slim` (314MB final image)
-   - Includes only the native binary + minimal OS libraries
-   - Runs as non-root user (`appuser`)
-   - Startup time: <100ms
-
-**Container details:**
-- **Build image**: `ghcr.io/graalvm/native-image-community:21`
-- **Runtime image**: `debian:12-slim` (includes required shared libraries)
-- **Final size**: ~314MB (native binary: ~40MB, base OS: ~274MB)
-- **User**: `appuser:appuser` (non-privileged)
-- **Port**: 8080 (configurable via `PORT` env var)
-
-### Alternative: Building Container Images with Jib
-
-For production CI/CD pipelines, use [Jib](https://github.com/GoogleContainerTools/jib) for Docker-less container building:
-
-```bash
-# Build and push to Artifact Registry (requires authentication)
-./gradlew :candid-api-grpc-server-cloud-run:jib
-
-# Build to local Docker daemon
-./gradlew :candid-api-grpc-server-cloud-run:jibDockerBuild
-```
+The Dockerfile uses a multi-stage build with GraalVM for compilation and debian:12-slim for runtime.
 
 ### Deploying to Cloud Run
 

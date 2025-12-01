@@ -34,6 +34,10 @@ dependencies {
 java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(21))
+        // Request GraalVM distribution
+        // If you have GraalVM installed locally (via SDKMAN, Homebrew, etc.),
+        // Gradle will auto-detect it. This ensures the native-image tool is available.
+        vendor.set(JvmVendorSpec.GRAAL_VM)
     }
 }
 
@@ -42,16 +46,27 @@ tasks.named<Test>("test") {
 }
 
 // GraalVM Native Image configuration
+// Requires GraalVM with native-image tool installed (see README for installation)
+// The toolchain configuration above tells Gradle to use your installed GraalVM
 graalvmNative {
     binaries {
         named("main") {
             imageName.set("denial-predictor-server")
             mainClass.set("com.candid.api.cloudrun.CloudRunServer")
+
+            // Verbose output for debugging build issues
             buildArgs.add("--verbose")
+
+            // Don't fall back to JVM if native image fails
             buildArgs.add("--no-fallback")
+
+            // Show exception stack traces during build
             buildArgs.add("-H:+ReportExceptionStackTraces")
         }
     }
+
+    // Use Java toolchains to find GraalVM
+    // Gradle will detect GraalVM installed via SDKMAN, Homebrew, or JAVA_HOME
     toolchainDetection.set(true)
 }
 
@@ -65,31 +80,55 @@ tasks.register("buildNativeImage") {
 }
 
 // Jib configuration for building container images
+// For native images: Run `./gradlew nativeCompile jibDockerBuild` to build native binary first
+// For JVM images: Run `./gradlew jibDockerBuild` directly
 jib {
     from {
-        // Use distroless base image for minimal attack surface and size
-        // For GraalVM native image, we only need a minimal base
-        image = "gcr.io/distroless/base-debian12"
+        // debian-slim provides shared libraries needed by GraalVM native images
+        // For JVM builds, you might want to use eclipse-temurin:21-jre-alpine instead
+        image = "debian:12-slim"
     }
     to {
         image = "us-central1-docker.pkg.dev/candid-central/candid-containers/denial-predictor-server"
         tags = setOf("latest", project.version.toString(), "native")
     }
     container {
-        // For native image, we copy the pre-built binary
-        // Jib will automatically detect and use the native-image output
         mainClass = "com.candid.api.cloudrun.CloudRunServer"
         ports = listOf("8080")
+
+        // Create and use non-root user
+        user = "1000:1000"
+
         environment = mapOf(
-            // Reduce native memory arena count for lower memory usage
+            "PORT" to "8080",
             "MALLOC_ARENA_MAX" to "2"
         )
         labels = mapOf(
             "org.opencontainers.image.source" to "https://github.com/candidhealth/candid-java-playground",
-            "org.opencontainers.image.description" to "Denial Predictor gRPC Server (GraalVM Native Image)",
-            "build.type" to "graalvm-native"
+            "org.opencontainers.image.description" to "Denial Predictor gRPC Server",
+            "org.opencontainers.image.version" to project.version.toString()
         )
-        // Cloud Run best practices
-        user = "nonroot:nonroot"
+    }
+
+    // Custom configuration for native vs JVM builds
+    extraDirectories {
+        paths {
+            // If native image exists, copy it into the container
+            path {
+                setFrom(file("build/native/nativeCompile"))
+                into = "/app"
+            }
+        }
+    }
+}
+
+// Task to build native image and package in container
+tasks.register("jibNative") {
+    group = "build"
+    description = "Build GraalVM native image and package in Docker container"
+    dependsOn("nativeCompile", "jibDockerBuild")
+
+    doFirst {
+        println("Building native image and packaging with Jib...")
     }
 }

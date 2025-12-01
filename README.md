@@ -6,17 +6,19 @@ Exploring Java as a potential new language for Candid's gRPC-based denial predic
 
 ```
 candid-java-playground/
-├── candid-api-proto/           # Protocol Buffer definitions
-├── candid-api-grpc-server/     # gRPC server implementation
-├── candid-api-grpc-client/     # gRPC client implementation
-├── candid-api-python-client/   # Auto-generated Python client bindings
-└── .github/workflows/          # CI/CD workflows
+├── candid-api-proto/                  # Protocol Buffer definitions
+├── candid-api-grpc-server/            # gRPC server implementation
+├── candid-api-grpc-client/            # gRPC client implementation
+├── candid-api-grpc-server-cloud-run/  # Cloud Run deployment (GraalVM native image)
+├── candid-api-python-client/          # Auto-generated Python client bindings
+└── .github/workflows/                 # CI/CD workflows
 ```
 
 ## Prerequisites
 
 - **Java 21** - Required for building and running
 - **Protocol Buffers Compiler (protoc)** - Required for proto file generation
+- **GraalVM 21** (Optional) - Required for building native images for Cloud Run deployment
 
 ### Installing protoc on macOS
 
@@ -30,6 +32,24 @@ protoc --version
 ```
 
 For other platforms, see [Protocol Buffers Installation](https://grpc.io/docs/protoc-installation/).
+
+### Installing GraalVM on macOS (Optional)
+
+Only needed if you want to build native images locally:
+
+```bash
+# Using Homebrew
+brew install --cask graalvm-jdk
+
+# Verify installation
+java -version
+# Should show: Java 21.x.x with GraalVM
+
+# Install native-image tool
+gu install native-image
+```
+
+For other platforms, see [GraalVM Installation](https://www.graalvm.org/downloads/).
 
 ## Getting Started
 
@@ -215,6 +235,161 @@ git push origin v1.0.0
 - **Untagged commit**: Uses commit hash (e.g., `0.0.0-1-g1234abc`)
 - **Dirty working tree**: Appends `.dirty` suffix
 
+## Cloud Run Deployment
+
+The `candid-api-grpc-server-cloud-run` module provides a production-ready deployment of the gRPC server to Google Cloud Run using GraalVM native image compilation.
+
+### Why GraalVM Native Image?
+
+**Performance Benefits:**
+- **Startup time**: <100ms (vs 5-15s for traditional JVM)
+- **Memory usage**: ~20-30MB (vs ~100MB for JVM)
+- **Cost savings**: ~40% reduction with Cloud Run's scale-to-zero capability
+
+**Trade-offs:**
+- Longer build times (~2-5 minutes for native compilation)
+- Some reflection-based libraries require configuration
+- Best for bursty traffic patterns with frequent cold starts
+
+### Building the Native Image
+
+```bash
+# Build native image locally (requires GraalVM installed)
+./gradlew :candid-api-grpc-server-cloud-run:nativeCompile
+
+# Run the native image
+./candid-api-grpc-server-cloud-run/build/native/nativeCompile/denial-predictor-server
+```
+
+### Building Container Images
+
+The module uses [Jib](https://github.com/GoogleContainerTools/jib) for Docker-less container building:
+
+```bash
+# Build and push to Artifact Registry (requires authentication)
+./gradlew :candid-api-grpc-server-cloud-run:jib
+
+# Build to local Docker daemon (requires Docker installed)
+./gradlew :candid-api-grpc-server-cloud-run:jibDockerBuild
+
+# Build as tar archive
+./gradlew :candid-api-grpc-server-cloud-run:jibBuildTar
+```
+
+**Container details:**
+- **Base image**: `gcr.io/distroless/base-debian12` (minimal, secure)
+- **Image**: `us-central1-docker.pkg.dev/candid-central/candid-containers/denial-predictor-server`
+- **Tags**: `latest`, `<version>`, `native`
+- **User**: `nonroot:nonroot` (non-privileged)
+
+### Deploying to Cloud Run
+
+```bash
+# Deploy using gcloud CLI
+gcloud run services replace candid-api-grpc-server-cloud-run/deploy/cloudrun.yaml \
+  --region=us-central1
+
+# Or use kubectl with Cloud Run
+kubectl apply -f candid-api-grpc-server-cloud-run/deploy/cloudrun.yaml
+```
+
+**Cloud Run configuration** (`deploy/cloudrun.yaml`):
+- **Autoscaling**: 0-10 instances (scale to zero when idle)
+- **Concurrency**: 100 requests per instance
+- **Memory**: 128Mi limit (64Mi request)
+- **CPU**: 1 vCPU limit (0.5 vCPU request)
+- **Health checks**: gRPC health checking protocol
+- **Port**: 8080 (HTTP/2 Cleartext - Cloud Run handles TLS)
+
+### Health Checks
+
+The server implements the [gRPC Health Checking Protocol](https://github.com/grpc/grpc/blob/master/doc/health-checking.md) required by Cloud Run:
+
+```bash
+# Test health check locally with grpcurl
+grpcurl -plaintext localhost:8080 grpc.health.v1.Health/Check
+```
+
+**Cloud Run health probe configuration:**
+- **Liveness probe**: Checks every 3 seconds, restarts after 5 failures
+- **Startup probe**: Allows up to 10 seconds for startup
+- **Service**: `grpc.health.v1.Health`
+
+### Testing Cloud Run Locally
+
+Run the Cloud Run integration tests to simulate the Cloud Run environment:
+
+```bash
+# Run all Cloud Run tests
+./gradlew :candid-api-grpc-server-cloud-run:test
+
+# Run specific test
+./gradlew :candid-api-grpc-server-cloud-run:test --tests CloudRunIntegrationTest
+```
+
+**What the tests verify:**
+- PORT environment variable handling (Cloud Run requirement)
+- gRPC health check protocol
+- Service functionality
+- Concurrent request handling
+- Server restart/recovery
+
+### GraalVM Configuration
+
+Native image configuration is located in:
+```
+candid-api-grpc-server-cloud-run/src/main/resources/META-INF/native-image/
+├── native-image.properties  # Build-time configuration
+├── reflect-config.json      # Reflection configuration
+└── resource-config.json     # Resource bundle configuration
+```
+
+**Key settings:**
+- **Runtime initialization**: Netty and gRPC classes (required for compatibility)
+- **Build-time initialization**: SLF4J logging
+- **Reflection**: All protobuf message and service classes
+- **Resources**: Logback configuration, application properties
+
+### Environment Variables
+
+The Cloud Run server respects these environment variables:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PORT` | `8080` | Server port (set by Cloud Run) |
+| `MALLOC_ARENA_MAX` | `2` | Reduce native memory usage |
+
+### Troubleshooting Cloud Run Deployment
+
+**Native image build fails:**
+```bash
+# Run with verbose output
+./gradlew :candid-api-grpc-server-cloud-run:nativeCompile --info
+
+# Common issues:
+# - Missing reflection configuration for protobuf classes
+# - Runtime initialization needed for Netty/gRPC
+# - Resource bundles not included
+```
+
+**Container fails health checks:**
+```bash
+# Check logs
+gcloud run services logs read denial-predictor --region=us-central1
+
+# Test health endpoint locally
+grpcurl -plaintext localhost:8080 grpc.health.v1.Health/Check
+```
+
+**High memory usage:**
+```bash
+# Check actual memory usage in Cloud Run metrics
+gcloud run services describe denial-predictor --region=us-central1
+
+# Native image should use ~20-30MB
+# If higher, check for memory leaks or configuration issues
+```
+
 ## CI/CD Workflows
 
 ### Test Workflow (`.github/workflows/test.yml`)
@@ -305,6 +480,9 @@ open candid-api-proto/build/generated/source/proto/main/
 | SLF4J | 2.0.17 | Logging facade |
 | Logback | 1.5.21 | Logging implementation |
 | JUnit Jupiter | 6.0.1 | Testing framework |
+| Testcontainers | 1.20.4 | Container integration testing |
+| AssertJ | 3.27.3 | Fluent test assertions |
+| GraalVM SDK | 24.2.0 | Native image compilation |
 
 ### Gradle Plugins
 
@@ -314,6 +492,8 @@ open candid-api-proto/build/generated/source/proto/main/
 | com.palantir.git-version | 4.2.0 | Automatic versioning from git |
 | com.palantir.consistent-versions | 3.7.0 | Dependency version management |
 | com.google.cloud.artifactregistry | 2.2.5 | Artifact Registry publishing |
+| com.google.cloud.tools.jib | 3.5.1 | Docker-less container building |
+| org.graalvm.buildtools.native | 0.10.4 | GraalVM native image builds |
 
 ## Troubleshooting
 

@@ -20,12 +20,14 @@ dependencies {
     // Logging
     implementation("org.slf4j:slf4j-api")
     runtimeOnly("ch.qos.logback:logback-classic")
+    runtimeOnly("net.logstash.logback:logstash-logback-encoder")
 
     // Test dependencies
     testImplementation("org.junit.jupiter:junit-jupiter")
     testImplementation("org.testcontainers:testcontainers")
     testImplementation("org.testcontainers:junit-jupiter")
     testImplementation("org.assertj:assertj-core")
+    testImplementation("ch.qos.logback:logback-classic")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 

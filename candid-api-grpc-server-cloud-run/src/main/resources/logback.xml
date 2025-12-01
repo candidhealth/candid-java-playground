@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!--
+        Logging configuration optimized for Google Cloud Run.
+
+        Cloud Run automatically captures stdout/stderr and sends to Cloud Logging.
+        This configuration outputs structured JSON logs that Cloud Logging can parse
+        and index for querying, filtering, and alerting.
+
+        Key features:
+        - JSON structured logging via logstash-logback-encoder
+        - stdout output (required for Cloud Run)
+        - Severity levels mapped to Cloud Logging standards
+        - Includes trace/span IDs for distributed tracing
+        - MDC context propagation for request tracking
+    -->
+
+    <!-- Console appender with JSON encoding -->
+    <appender name="CONSOLE_JSON" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <!-- Cloud Logging expects 'severity' field instead of 'level' -->
+            <fieldNames>
+                <level>severity</level>
+                <levelValue>[ignore]</levelValue>
+            </fieldNames>
+
+            <!-- Map SLF4J levels to Cloud Logging severity levels -->
+            <customFields>{"serviceContext":{"service":"denial-predictor","version":"${version:-unknown}"}}</customFields>
+
+            <!-- Include standard fields for observability -->
+            <includeMdcKeyName>trace_id</includeMdcKeyName>
+            <includeMdcKeyName>span_id</includeMdcKeyName>
+            <includeMdcKeyName>request_id</includeMdcKeyName>
+            <includeMdcKeyName>user_id</includeMdcKeyName>
+
+            <!-- Format timestamp in ISO-8601 format (Cloud Logging standard) -->
+            <timestampPattern>yyyy-MM-dd'T'HH:mm:ss.SSSX</timestampPattern>
+
+            <!-- Include stack traces for exceptions -->
+            <throwableConverter class="net.logstash.logback.stacktrace.ShortenedThrowableConverter">
+                <maxDepthPerThrowable>30</maxDepthPerThrowable>
+                <maxLength>2048</maxLength>
+                <shortenedClassNameLength>20</shortenedClassNameLength>
+                <exclude>^sun\.reflect\..*\.invoke</exclude>
+                <exclude>^net\.sf\.cglib\.proxy\.MethodProxy\.invoke</exclude>
+                <evaluator class="net.logstash.logback.stacktrace.ShortenedThrowableConverter$DefaultEvaluator">
+                    <excludeRegex>^org\.junit\.</excludeRegex>
+                </evaluator>
+                <rootCauseFirst>true</rootCauseFirst>
+            </throwableConverter>
+        </encoder>
+    </appender>
+
+    <!-- Simple console appender for local development (non-JSON) -->
+    <appender name="CONSOLE_SIMPLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Always use simple console appender for GraalVM compatibility -->
+    <!-- Conditional (if/else) requires Janino which complicates native image -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE_JSON" />
+    </root>
+
+    <!-- Adjust log levels for noisy libraries -->
+    <logger name="io.grpc.netty" level="WARN" />
+    <logger name="io.netty" level="WARN" />
+    <logger name="io.grpc.internal" level="WARN" />
+
+    <!-- Application loggers at INFO level -->
+    <logger name="com.candid.api" level="INFO" />
+</configuration>

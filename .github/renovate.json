@@ -1,0 +1,35 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    "group:monorepos"
+  ],
+  "packageRules": [
+    {
+      "matchPackagePatterns": ["^io\\.grpc:"],
+      "groupName": "gRPC packages",
+      "groupSlug": "grpc"
+    },
+    {
+      "matchPackagePatterns": ["^com\\.google\\.protobuf:"],
+      "groupName": "Protobuf packages",
+      "groupSlug": "protobuf"
+    },
+    {
+      "matchPackagePatterns": ["^org\\.junit"],
+      "groupName": "JUnit packages",
+      "groupSlug": "junit"
+    },
+    {
+      "matchPackagePatterns": ["^org\\.slf4j:", "^ch\\.qos\\.logback:"],
+      "groupName": "Logging packages",
+      "groupSlug": "logging"
+    }
+  ],
+  "schedule": [
+    "before 3am on Monday"
+  ],
+  "timezone": "America/Los_Angeles",
+  "automerge": false,
+  "platformAutomerge": false
+}

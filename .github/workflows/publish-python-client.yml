@@ -1,0 +1,91 @@
+name: Publish Python Client
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (leave empty for auto-version from git)'
+        required: false
+  push:
+    branches: [main]
+
+jobs:
+  publish-python:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for git-version
+
+      - name: Setup Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Setup Java 21 (for gradle-git-version)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'gradle'
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: 2.1.3
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Install grpcio-tools
+        run: pip install grpcio-tools==1.77.0
+
+      - name: Generate Python bindings from proto files
+        working-directory: candid-api-python-client
+        run: |
+          python -m grpc_tools.protoc \
+            --proto_path=../candid-api-proto/src/main/proto \
+            --python_out=./candid_api \
+            --grpc_python_out=./candid_api \
+            ../candid-api-proto/src/main/proto/denial_predictor.proto
+
+      - name: Get version from gradle-git-version
+        id: get-version
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            chmod +x gradlew
+            VERSION=$(./gradlew properties --no-daemon | grep "^version:" | awk '{print $2}')
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Update pyproject.toml version
+        working-directory: candid-api-python-client
+        run: |
+          poetry version ${{ steps.get-version.outputs.version }}
+
+      - name: Build Python package
+        working-directory: candid-api-python-client
+        run: poetry build
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: 'projects/PROJECT_NUMBER/locations/global/workloadIdentityPools/POOL_NAME/providers/PROVIDER_NAME'
+          service_account: 'SERVICE_ACCOUNT@PROJECT_ID.iam.gserviceaccount.com'
+
+      - name: Configure Poetry for Artifact Registry
+        working-directory: candid-api-python-client
+        run: |
+          gcloud auth application-default print-access-token | \
+            poetry config http-basic.candid-python-private oauth2accesstoken
+          poetry config repositories.candid-python-private \
+            https://us-central1-python.pkg.dev/candid-central/candid-python-private/
+
+      - name: Publish to candid-python-private
+        working-directory: candid-api-python-client
+        run: poetry publish --repository candid-python-private

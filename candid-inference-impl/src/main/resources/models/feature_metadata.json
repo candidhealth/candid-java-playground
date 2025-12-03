@@ -1,0 +1,43 @@
+{
+  "features": [
+    {
+      "name": "claim_amount",
+      "type": "NUMERIC",
+      "index": 0
+    },
+    {
+      "name": "patient_age",
+      "type": "NUMERIC",
+      "index": 1
+    },
+    {
+      "name": "procedure_category",
+      "type": "CATEGORICAL",
+      "index": 2,
+      "mapping": {
+        "SURGERY": 0.0,
+        "DIAGNOSTIC": 1.0,
+        "THERAPY": 2.0,
+        "EMERGENCY": 3.0,
+        "UNKNOWN": 4.0
+      }
+    },
+    {
+      "name": "provider_state",
+      "type": "CATEGORICAL",
+      "index": 3,
+      "mapping": {
+        "CA": 0.0,
+        "NY": 1.0,
+        "TX": 2.0,
+        "FL": 3.0,
+        "UNKNOWN": 4.0
+      }
+    },
+    {
+      "name": "prior_denials",
+      "type": "NUMERIC",
+      "index": 4
+    }
+  ]
+}

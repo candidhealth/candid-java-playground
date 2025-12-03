@@ -15,3 +15,9 @@ org.assertj:assertj-core = 3.27.3
 
 # GraalVM
 org.graalvm.sdk:nativeimage = 24.2.0
+
+# ONNX Runtime
+com.microsoft.onnxruntime:onnxruntime = 1.19.2
+
+# JSON Processing
+com.google.code.gson:gson = 2.10.1

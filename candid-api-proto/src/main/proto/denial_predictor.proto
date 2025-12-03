@@ -20,8 +20,8 @@ message ServiceLineDenialPredictionPayload {
     bool has_ordering_provider = 7;
     bool is_drug_claim = 8;
     bool has_service_line_description = 9;
-    double quantity = 10;
-    double charge_per_unit = 11;
+    float quantity = 10;
+    float charge_per_unit = 11;
     int32 days_since_epoch = 12;
     string payer_id = 13;
     string billing_provider_state = 14;
@@ -55,8 +55,8 @@ message DenialPredictionPayload {
 }
 
 message ServiceLinePredictionResponse {
-	double raw_score = 1;
-	double probability = 2;
+	float raw_score = 1;
+	float probability = 2;
 	string raw_reason = 3;
 	string human_readable_reason = 4;
 }

@@ -2,6 +2,7 @@ package com.candid.api.server;
 
 import com.candid.api.DenialPredictionPayload;
 import com.candid.api.DenialPredictionResponse;
+import com.candid.api.ServiceLineDenialPredictionPayload;
 import com.candid.api.client.DenialPredictorClient;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,19 +37,23 @@ class DenialPredictorE2ETest {
     @Test
     void testPredictDenial_returnsHardcodedResponse() {
         // Given
-        DenialPredictionPayload request = DenialPredictionPayload.newBuilder()
-                .setPatientId("P12345")
-                .setClaimAmount(15000.00)
-                .setProcedureCode("CPT-99999")
+        ServiceLineDenialPredictionPayload serviceLinePayload = ServiceLineDenialPredictionPayload.newBuilder()
+                .setServiceLineId("test-service-line-123")
+                .setHasPriorAuthorizationNumber(false)
+                .setChargePerUnit(1000.0f)
+                .setProcedureCode("99213")
+                .setPayerId("test-payer")
+                .setBillingProviderState("CA")
+                .build();
+
+        DenialPredictionPayload payload = DenialPredictionPayload.newBuilder()
+                .addItems(serviceLinePayload)
                 .build();
 
         // When
-        DenialPredictionResponse response = client.predictDenial(request);
+        DenialPredictionResponse response = client.predictDenial(payload);
 
         // Then
         assertNotNull(response);
-        assertTrue(response.getWillBeDenied(), "Expected denial prediction to be true");
-        assertEquals(0.85, response.getConfidenceScore(), 0.001, "Expected confidence score of 0.85");
-        assertEquals("High-cost procedure exceeds typical threshold", response.getReason());
     }
 }

@@ -87,7 +87,7 @@ class CloudRunIntegrationTest {
         ServiceLineDenialPredictionPayload serviceLinePayload = ServiceLineDenialPredictionPayload.newBuilder()
                 .setServiceLineId("test-service-line-123")
                 .setHasPriorAuthorizationNumber(false)
-                .setChargePerUnit(1000.0)
+                .setChargePerUnit(1000.0f)
                 .setProcedureCode("99213")
                 .setPayerId("test-payer")
                 .setBillingProviderState("CA")
@@ -105,8 +105,8 @@ class CloudRunIntegrationTest {
 
         ServiceLinePredictionResponse prediction = response.getResultsMap().get("test-service-line-123");
         assertThat(prediction).isNotNull();
-        assertThat(prediction.getProbability()).isGreaterThanOrEqualTo(0.0);
-        assertThat(prediction.getProbability()).isLessThanOrEqualTo(1.0);
+        assertThat(prediction.getProbability()).isGreaterThanOrEqualTo(0.0f);
+        assertThat(prediction.getProbability()).isLessThanOrEqualTo(1.0f);
     }
 
     @Test
@@ -119,7 +119,7 @@ class CloudRunIntegrationTest {
         for (int i = 0; i < 10; i++) {
             ServiceLineDenialPredictionPayload serviceLinePayload = ServiceLineDenialPredictionPayload.newBuilder()
                     .setServiceLineId("service-line-" + i)
-                    .setChargePerUnit(1000.0 + i * 100)
+                    .setChargePerUnit(1000.0f + i * 100)
                     .setProcedureCode("99213")
                     .setPayerId("payer-" + i)
                     .setBillingProviderState("CA")
@@ -136,7 +136,7 @@ class CloudRunIntegrationTest {
             assertThat(response.getResultsCount()).isEqualTo(1);
 
             ServiceLinePredictionResponse prediction = response.getResultsMap().get("service-line-" + i);
-            assertThat(prediction.getProbability()).isBetween(0.0, 1.0);
+            assertThat(prediction.getProbability()).isBetween(0.0f, 1.0f);
         }
     }
 
@@ -156,7 +156,7 @@ class CloudRunIntegrationTest {
                 for (int j = 0; j < 5; j++) {
                     ServiceLineDenialPredictionPayload serviceLinePayload = ServiceLineDenialPredictionPayload.newBuilder()
                             .setServiceLineId("thread-" + threadId + "-line-" + j)
-                            .setChargePerUnit(1000.0 + threadId * 100 + j)
+                            .setChargePerUnit(1000.0f + threadId * 100 + j)
                             .setProcedureCode("99213")
                             .setPayerId("payer-" + threadId)
                             .setBillingProviderState("CA")
@@ -210,7 +210,7 @@ class CloudRunIntegrationTest {
 
         ServiceLineDenialPredictionPayload serviceLinePayload = ServiceLineDenialPredictionPayload.newBuilder()
                 .setServiceLineId("restart-test-line")
-                .setChargePerUnit(1500.0)
+                .setChargePerUnit(1500.0f)
                 .setProcedureCode("99213")
                 .setPayerId("restart-payer")
                 .setBillingProviderState("CA")

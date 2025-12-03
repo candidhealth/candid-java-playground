@@ -3,6 +3,8 @@ package com.candid.api.cloudrun;
 import com.candid.api.DenialPredictionPayload;
 import com.candid.api.DenialPredictionResponse;
 import com.candid.api.DenialPredictorGrpc;
+import com.candid.api.ServiceLineDenialPredictionPayload;
+import com.candid.api.ServiceLinePredictionResponse;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.health.v1.HealthCheckRequest;
@@ -82,18 +84,29 @@ class CloudRunIntegrationTest {
         DenialPredictorGrpc.DenialPredictorBlockingStub denialStub =
                 DenialPredictorGrpc.newBlockingStub(channel);
 
-        DenialPredictionPayload payload = DenialPredictionPayload.newBuilder()
-                .setPatientId("test-patient-123")
-                .setClaimAmount(1000.0)
+        ServiceLineDenialPredictionPayload serviceLinePayload = ServiceLineDenialPredictionPayload.newBuilder()
+                .setServiceLineId("test-service-line-123")
+                .setHasPriorAuthorizationNumber(false)
+                .setChargePerUnit(1000.0f)
                 .setProcedureCode("99213")
+                .setPayerId("test-payer")
+                .setBillingProviderState("CA")
+                .build();
+
+        DenialPredictionPayload payload = DenialPredictionPayload.newBuilder()
+                .addItems(serviceLinePayload)
                 .build();
 
         DenialPredictionResponse response = denialStub.predictDenial(payload);
 
         // Then: Service returns expected response
         assertThat(response).isNotNull();
-        assertThat(response.getConfidenceScore()).isGreaterThanOrEqualTo(0.0);
-        assertThat(response.getConfidenceScore()).isLessThanOrEqualTo(1.0);
+        assertThat(response.getResultsCount()).isEqualTo(1);
+
+        ServiceLinePredictionResponse prediction = response.getResultsMap().get("test-service-line-123");
+        assertThat(prediction).isNotNull();
+        assertThat(prediction.getProbability()).isGreaterThanOrEqualTo(0.0f);
+        assertThat(prediction.getProbability()).isLessThanOrEqualTo(1.0f);
     }
 
     @Test
@@ -104,17 +117,26 @@ class CloudRunIntegrationTest {
 
         // When: Multiple requests are made sequentially
         for (int i = 0; i < 10; i++) {
-            DenialPredictionPayload payload = DenialPredictionPayload.newBuilder()
-                    .setPatientId("patient-" + i)
-                    .setClaimAmount(1000.0 + i * 100)
+            ServiceLineDenialPredictionPayload serviceLinePayload = ServiceLineDenialPredictionPayload.newBuilder()
+                    .setServiceLineId("service-line-" + i)
+                    .setChargePerUnit(1000.0f + i * 100)
                     .setProcedureCode("99213")
+                    .setPayerId("payer-" + i)
+                    .setBillingProviderState("CA")
+                    .build();
+
+            DenialPredictionPayload payload = DenialPredictionPayload.newBuilder()
+                    .addItems(serviceLinePayload)
                     .build();
 
             DenialPredictionResponse response = denialStub.predictDenial(payload);
 
             // Then: Each request succeeds
             assertThat(response).isNotNull();
-            assertThat(response.getConfidenceScore()).isBetween(0.0, 1.0);
+            assertThat(response.getResultsCount()).isEqualTo(1);
+
+            ServiceLinePredictionResponse prediction = response.getResultsMap().get("service-line-" + i);
+            assertThat(prediction.getProbability()).isBetween(0.0f, 1.0f);
         }
     }
 
@@ -132,14 +154,21 @@ class CloudRunIntegrationTest {
             final int threadId = i;
             threads[i] = new Thread(() -> {
                 for (int j = 0; j < 5; j++) {
-                    DenialPredictionPayload payload = DenialPredictionPayload.newBuilder()
-                            .setPatientId("patient-" + threadId + "-" + j)
-                            .setClaimAmount(1000.0 + threadId * 100 + j)
+                    ServiceLineDenialPredictionPayload serviceLinePayload = ServiceLineDenialPredictionPayload.newBuilder()
+                            .setServiceLineId("thread-" + threadId + "-line-" + j)
+                            .setChargePerUnit(1000.0f + threadId * 100 + j)
                             .setProcedureCode("99213")
+                            .setPayerId("payer-" + threadId)
+                            .setBillingProviderState("CA")
+                            .build();
+
+                    DenialPredictionPayload payload = DenialPredictionPayload.newBuilder()
+                            .addItems(serviceLinePayload)
                             .build();
 
                     DenialPredictionResponse response = denialStub.predictDenial(payload);
                     assertThat(response).isNotNull();
+                    assertThat(response.getResultsCount()).isEqualTo(1);
                 }
             });
             threads[i].start();
@@ -178,13 +207,22 @@ class CloudRunIntegrationTest {
         // And: Service is functional
         DenialPredictorGrpc.DenialPredictorBlockingStub denialStub =
                 DenialPredictorGrpc.newBlockingStub(channel);
+
+        ServiceLineDenialPredictionPayload serviceLinePayload = ServiceLineDenialPredictionPayload.newBuilder()
+                .setServiceLineId("restart-test-line")
+                .setChargePerUnit(1500.0f)
+                .setProcedureCode("99213")
+                .setPayerId("restart-payer")
+                .setBillingProviderState("CA")
+                .build();
+
         DenialPredictionResponse response = denialStub.predictDenial(
                 DenialPredictionPayload.newBuilder()
-                        .setPatientId("test-patient")
-                        .setClaimAmount(1500.0)
-                        .setProcedureCode("99213")
+                        .addItems(serviceLinePayload)
                         .build()
         );
+
         assertThat(response).isNotNull();
+        assertThat(response.getResultsCount()).isEqualTo(1);
     }
 }

@@ -17,6 +17,16 @@ dependencies {
     implementation("io.grpc:grpc-netty-shaded")
     implementation("io.grpc:grpc-services")
 
+    // Machine Learning - matching Python version 3.1.1
+    implementation("ml.dmlc:xgboost4j_2.13:3.1.1")
+
+    // Caching
+    implementation("com.github.ben-manes.caffeine:caffeine:3.1.8")
+
+    // JSON processing for model metadata
+    implementation("com.fasterxml.jackson.core:jackson-core:2.16.1")
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.16.1")
+
     // Logging
     implementation("org.slf4j:slf4j-api")
     runtimeOnly("ch.qos.logback:logback-classic")

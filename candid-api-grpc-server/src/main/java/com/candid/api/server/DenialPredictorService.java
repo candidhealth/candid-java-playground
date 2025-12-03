@@ -3,29 +3,58 @@ package com.candid.api.server;
 import com.candid.api.DenialPredictionPayload;
 import com.candid.api.DenialPredictionResponse;
 import com.candid.api.DenialPredictorGrpc;
+import com.candid.api.ServiceLinePredictionResponse;
+import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Map;
+
 public class DenialPredictorService extends DenialPredictorGrpc.DenialPredictorImplBase {
     private static final Logger logger = LoggerFactory.getLogger(DenialPredictorService.class);
+    private final DenialPredictionModelService modelService;
+
+    public DenialPredictorService() {
+        this.modelService = new DenialPredictionModelService();
+    }
+
+    public DenialPredictorService(DenialPredictionModelService modelService) {
+        this.modelService = modelService;
+    }
 
     @Override
     public void predictDenial(DenialPredictionPayload request, StreamObserver<DenialPredictionResponse> responseObserver) {
-        logger.info("Received prediction request for patient: {}, claim amount: {}, procedure: {}",
-                request.getPatientId(), request.getClaimAmount(), request.getProcedureCode());
+        logger.info("Received denial prediction request with {} service lines", request.getItemsCount());
 
-        // Hardcoded response for testing
-        DenialPredictionResponse response = DenialPredictionResponse.newBuilder()
-                .setWillBeDenied(true)
-                .setConfidenceScore(0.85)
-                .setReason("High-cost procedure exceeds typical threshold")
-                .build();
+        try {
+            // Use batch prediction for better performance
+            Map<String, ServiceLinePredictionResponse> batchPredictions =
+                modelService.predictBatch(request.getItemsList());
 
-        logger.info("Returning prediction: denied={}, confidence={}",
-                response.getWillBeDenied(), response.getConfidenceScore());
+            DenialPredictionResponse.Builder responseBuilder = DenialPredictionResponse.newBuilder();
 
-        responseObserver.onNext(response);
-        responseObserver.onCompleted();
+            // Add all predictions to response
+            for (var entry : batchPredictions.entrySet()) {
+                responseBuilder.putResults(entry.getKey(), entry.getValue());
+            }
+
+            DenialPredictionResponse response = responseBuilder.build();
+            logger.info("Returning batch predictions for {} service lines", response.getResultsCount());
+
+            responseObserver.onNext(response);
+            responseObserver.onCompleted();
+
+        } catch (DenialPredictionModelService.ModelException e) {
+            logger.error("Model prediction error", e);
+            responseObserver.onError(Status.INTERNAL
+                    .withDescription("Model prediction failed: " + e.getMessage())
+                    .asRuntimeException());
+        } catch (Exception e) {
+            logger.error("Unexpected error during prediction", e);
+            responseObserver.onError(Status.INTERNAL
+                    .withDescription("Prediction service error: " + e.getMessage())
+                    .asRuntimeException());
+        }
     }
 }

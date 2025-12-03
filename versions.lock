@@ -18,7 +18,7 @@ com.google.api.grpc:proto-google-common-protos:2.59.2 (1 constraints: 100affb3)
 
 com.google.code.findbugs:jsr305:3.0.2 (4 constraints: a52d8acb)
 
-com.google.code.gson:gson:2.11.0 (3 constraints: c62237a9)
+com.google.code.gson:gson:2.11.0 (4 constraints: fb275107)
 
 com.google.errorprone:error_prone_annotations:2.36.0 (9 constraints: f55c5de3)
 
@@ -33,6 +33,8 @@ com.google.j2objc:j2objc-annotations:3.0.0 (1 constraints: 150aeab4)
 com.google.protobuf:protobuf-java:4.33.1 (4 constraints: b3336de3)
 
 com.google.protobuf:protobuf-java-util:4.33.1 (1 constraints: 030a22b3)
+
+com.microsoft.onnxruntime:onnxruntime:1.19.2 (1 constraints: 3f05463b)
 
 io.grpc:grpc-api:1.77.0 (8 constraints: be4c55e0)
 

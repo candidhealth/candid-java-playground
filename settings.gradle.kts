@@ -21,4 +21,4 @@ plugins {
 }
 
 rootProject.name = "candid-java-playground"
-include("candid-api-proto", "candid-api-grpc-server", "candid-api-grpc-client", "candid-api-grpc-server-cloud-run")
+include("candid-api-proto", "candid-api-grpc-server", "candid-api-grpc-client", "candid-api-grpc-server-cloud-run", "candid-inference-impl")

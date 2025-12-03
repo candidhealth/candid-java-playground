@@ -1,0 +1,7 @@
+{
+  "type": "PLATT_SCALING",
+  "parameters": {
+    "a": -1.5,
+    "b": 0.3
+  }
+}
